@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Torclix Tracker</title>
+<script src="https://telegram.org/js/telegram-web-app.js" defer></script>
+<style>
+:root{--bg:#05080a;--card:#0d1418;--card-2:#121c22;--line:#1a262d;--line-2:#243239;--ink:#e8f4f1;--mute:#7a8f8a;--accent:#2dd4bf;--accent-2:#22d3ee;--ok:#4ade80;--warn:#f59e0b;--danger:#f87171;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,system-ui,sans-serif;padding:16px 16px 100px;min-height:100vh;background-image:radial-gradient(circle at 20% 0%,rgba(45,212,191,.15),transparent 50%),radial-gradient(circle at 80% 100%,rgba(168,85,247,.1),transparent 50%)}
+h1{font-size:1.5rem;font-weight:800;margin-bottom:4px}
+h2{font-size:1.1rem;font-weight:700;margin:20px 0 12px}
+.sub{color:var(--mute);font-size:.82rem;margin-bottom:20px}
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
+.stat-card{background:linear-gradient(135deg,rgba(45,212,191,.08),transparent 70%),var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.stat-card .lbl{font-size:.7rem;color:var(--mute);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.stat-card .val{font-size:1.4rem;font-weight:800;font-family:monospace;color:var(--accent);line-height:1}
+.stat-card .sub{font-size:.72rem;color:var(--mute);margin-top:4px}
+.group-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;cursor:pointer;transition:all .2s}
+.group-card:hover{border-color:var(--line-2);transform:translateY(-2px)}
+.group-card .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.group-card .name{font-weight:700;font-size:.95rem}
+.group-card .count{font-size:.78rem;color:var(--mute);font-family:monospace}
+.group-card .bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.group-card .bar .fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .8s ease}
+.task-list{display:flex;flex-direction:column;gap:8px}
+.task{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s}
+.task:hover{border-color:var(--line-2);background:var(--card-2)}
+.task.done{opacity:.55}
+.task.done .title{text-decoration:line-through;color:var(--mute)}
+.task .check{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--line-2);flex-shrink:0;display:grid;place-items:center;font-size:.85rem}
+.task.done .check{background:linear-gradient(135deg,var(--accent),var(--accent-2));border-color:var(--accent);color:#04120f}
+.task .title{font-size:.88rem;flex:1}
+.section{display:none}
+.section.active{display:block}
+.back{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:var(--card);border:1px solid var(--line-2);color:var(--mute);font-size:.85rem;cursor:pointer;margin-bottom:16px;font-family:inherit;font-weight:600}
+.back:hover{color:var(--accent);border-color:var(--accent)}
+.form{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+.form label{display:block;font-size:.75rem;color:var(--mute);margin-bottom:4px;font-weight:600}
+.form input,.form select{width:100%;padding:10px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--line-2);color:var(--ink);font-size:.9rem;margin-bottom:12px;font-family:inherit;outline:none}
+.form input:focus,.form select:focus{border-color:var(--accent)}
+.form button{width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#04120f;font-weight:700;cursor:pointer;font-family:inherit;font-size:.9rem}
+.contact-item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.contact-item .name{font-weight:700;font-size:.9rem;margin-bottom:4px}
+.contact-item .meta{font-size:.78rem;color:var(--mute);display:flex;gap:10px;flex-wrap:wrap}
+.badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:.7rem;font-weight:700;background:var(--card-2);color:var(--accent)}
+.tx{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.tx .cat{font-weight:700;font-size:.9rem}
+.tx .date{font-size:.75rem;color:var(--mute);margin-top:2px}
+.tx .amount{font-family:monospace;font-weight:700;font-size:1rem}
+.tx.income .amount{color:var(--ok)}
+.tx.expense .amount{color:var(--danger)}
+.tx.withdrawal .amount{color:var(--warn)}
+.tabs{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto}
+.tab{padding:8px 16px;border-radius:10px;background:var(--card);border:1px solid var(--line);color:var(--mute);font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit}
+.tab.active{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#04120f;border-color:var(--accent)}
+</style>
+</head>
+<body>
+
+<!-- ГЛАВНАЯ -->
+<div class="section active" id="s-main">
+  <h1>Torclix Tracker</h1>
+  <div class="sub">Панель управления запуском</div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="lbl">Прогресс</div><div class="val" id="pct">0%</div><div class="sub" id="pct-sub">0 из 0</div></div>
+    <div class="stat-card"><div class="lbl">Капитал</div><div class="val" id="capital">0 ₽</div><div class="sub">после налога</div></div>
+    <div class="stat-card"><div class="lbl">Доход</div><div class="val" id="income">0 ₽</div><div class="sub">всего</div></div>
+    <div class="stat-card"><div class="lbl">Расход</div><div class="val" id="expense">0 ₽</div><div class="sub">всего</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="groups">Задачи</button>
+    <button class="tab" data-tab="finance">Финансы</button>
+    <button class="tab" data-tab="contacts">Касания</button>
+  </div>
+
+  <div id="tab-groups">
+    <div id="groups"></div>
+  </div>
+
+  <div id="tab-finance" style="display:none;">
+    <div class="form">
+      <h2 style="margin-top:0;">Добавить операцию</h2>
+      <label>Тип</label>
+      <select id="tx-type">
+        <option value="income">📈 Доход</option>
+        <option value="expense">📉 Расход</option>
+        <option value="withdrawal">💸 Вывод</option>
+      </select>
+      <label>Сумма (₽)</label>
+      <input id="tx-amount" type="number" placeholder="3500">
+      <label>Категория</label>
+      <input id="tx-category" placeholder="Start / Хостинг / Домен">
+      <label>Плательщик (для дохода)</label>
+      <select id="tx-payer">
+        <option value="business">🏢 Юрлицо (6%)</option>
+        <option value="individual">👤 Физлицо (4%)</option>
+      </select>
+      <button onclick="addTx()">Записать</button>
+    </div>
+    <div id="tx-list"></div>
+  </div>
+
+  <div id="tab-contacts" style="display:none;">
+    <div class="form">
+      <h2 style="margin-top:0;">Добавить касание</h2>
+      <label>Тип</label>
+      <select id="ct-type">
+        <option value="wash">🚗 Мойка</option>
+        <option value="studio">🏢 Студия</option>
+      </select>
+      <label>Название</label>
+      <input id="ct-name" placeholder="Водолей">
+      <label>Телефон</label>
+      <input id="ct-phone" placeholder="+7...">
+      <label>Канал</label>
+      <select id="ct-channel">
+        <option value="whatsapp">💬 WhatsApp</option>
+        <option value="telegram">📱 Telegram</option>
+        <option value="call">📞 Звонок</option>
+        <option value="vk">📘 ВК</option>
+      </select>
+      <button onclick="addContact()">Добавить</button>
+    </div>
+    <div id="contacts-list"></div>
+  </div>
+</div>
+
+<!-- ЗАДАЧИ ГРУППЫ -->
+<div class="section" id="s-tasks">
+  <button class="back" onclick="showMain()">← Назад</button>
+  <h2 id="group-title">Задачи</h2>
+  <div class="task-list" id="task-list"></div>
+</div>
+
+<script>
+function tg(){return (window.Telegram&&window.Telegram.WebApp)?window.Telegram.WebApp:null;}
+async function api(path,opts){
+  const res=await fetch(path,Object.assign({headers:{'Content-Type':'application/json'}},opts||{}));
+  if(!res.ok)throw new Error('http_'+res.status);
+  return res.json();
+}
+function fmt(n){return (n||0).toLocaleString('ru-RU')+' ₽';}
+function show(id){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
+function showMain(){show('s-main');loadStats();loadTx();loadContacts();}
+
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',function(){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  this.classList.add('active');
+  const tab=this.dataset.tab;
+  document.getElementById('tab-groups').style.display=tab==='groups'?'':'none';
+  document.getElementById('tab-finance').style.display=tab==='finance'?'':'none';
+  document.getElementById('tab-contacts').style.display=tab==='contacts'?'':'none';
+}));
+
+async function loadStats(){
+  try{
+    const d=await api('/api/tracker/stats');
+    const total=d.overall.total,done=d.overall.done;
+    const pct=total?Math.round(done/total*100):0;
+    document.getElementById('pct').textContent=pct+'%';
+    document.getElementById('pct-sub').textContent=done+' из '+total;
+    document.getElementById('capital').textContent=fmt(d.capital/100);
+    document.getElementById('income').textContent=fmt(d.income/100);
+    document.getElementById('expense').textContent=fmt(d.expense/100);
+    document.getElementById('groups').innerHTML=d.groups.map(g=>{
+      const gp=g.total?Math.round(g.done/g.total*100):0;
+      return `<div class="group-card" onclick="openGroup(${g.id},'${g.name.replace(/'/g,"\\'")}')"><div class="head"><div class="name">${g.name}</div><div class="count">${g.done}/${g.total} · ${gp}%</div></div><div class="bar"><div class="fill" style="width:${gp}%"></div></div></div>`;
+    }).join('');
+  }catch(e){console.error(e);}
+}
+
+async function openGroup(id,name){
+  document.getElementById('group-title').textContent=name;
+  show('s-tasks');
+  try{
+    const d=await api('/api/tracker/tasks?group='+id);
+    document.getElementById('task-list').innerHTML=d.tasks.map(t=>`<div class="task ${t.status==='done'?'done':''}" onclick="toggleTask(${t.id},this)"><div class="check">${t.status==='done'?'✓':''}</div><div class="title">${t.title}</div></div>`).join('');
+  }catch(e){document.getElementById('task-list').innerHTML='<div style="color:#f87171">Ошибка</div>';}
+}
+
+async function toggleTask(id,el){
+  try{
+    const d=await api('/api/tracker/task/'+id+'/toggle',{method:'POST'});
+    if(d.status==='done'){el.classList.add('done');el.querySelector('.check').textContent='✓';}
+    else{el.classList.remove('done');el.querySelector('.check').textContent='';}
+  }catch(e){alert('Ошибка: '+e.message);}
+}
+
+async function loadTx(){
+  try{
+    const d=await api('/api/finance/transactions?limit=20');
+    document.getElementById('tx-list').innerHTML=d.transactions.length?d.transactions.map(t=>{
+      const icon={income:'+',expense:'−',withdrawal:'−'}[t.kind]||'•';
+      const cls=t.kind;
+      return `<div class="tx ${cls}"><div><div class="cat">${t.category}</div><div class="date">${(t.created_at||'').slice(0,10)}</div></div><div class="amount">${icon}${fmt(t.amount_kop/100)}</div></div>`;
+    }).join(''):'<div style="color:#7a8f8a;text-align:center;padding:20px">Операций пока нет</div>';
+  }catch(e){console.error(e);}
+}
+
+async function addTx(){
+  const type=document.getElementById('tx-type').value;
+  const amount=document.getElementById('tx-amount').value;
+  const category=document.getElementById('tx-category').value||'other';
+  const payer=document.getElementById('tx-payer').value;
+  if(!amount){alert('Введи сумму');return;}
+  try{
+    await api('/api/finance/transaction',{method:'POST',body:JSON.stringify({kind:type,amount:amount,category:category,payer_type:payer})});
+    document.getElementById('tx-amount').value='';
+    document.getElementById('tx-category').value='';
+    loadStats();loadTx();
+  }catch(e){alert('Ошибка: '+e.message);}
+}
+
+async function loadContacts(){
+  try{
+    const d=await api('/api/tracker/contacts');
+    document.getElementById('contacts-list').innerHTML=d.contacts.length?d.contacts.map(c=>{
+      const icon=c.type==='wash'?'🚗':'🏢';
+      return `<div class="contact-item"><div class="name">${icon} ${c.name}</div><div class="meta"><span class="badge">${c.status_name}</span><span>${c.channel||'—'}</span><span>${c.phone||''}</span></div></div>`;
+    }).join(''):'<div style="color:#7a8f8a;text-align:center;padding:20px">Касаний пока нет</div>';
+  }catch(e){console.error(e);}
+}
+
+async function addContact(){
+  const type=document.getElementById('ct-type').value;
+  const name=document.getElementById('ct-name').value.trim();
+  const phone=document.getElementById('ct-phone').value.trim();
+  const channel=document.getElementById('ct-channel').value;
+  if(!name){alert('Введи название');return;}
+  try{
+    await api('/api/tracker/contact',{method:'POST',body:JSON.stringify({type,name,phone,channel})});
+    document.getElementById('ct-name').value='';
+    document.getElementById('ct-phone').value='';
+    loadContacts();loadStats();
+  }catch(e){alert('Ошибка: '+e.message);}
+}
+
+(function init(){
+  const t=tg();
+  if(t){t.ready();t.expand();}
+  loadStats();loadTx();loadContacts();
+})();
+</script>
+</body>
+</html>
