@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: torclix-tracker
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: OWNER_ID
+        value: "8011530004"
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+
