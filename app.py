@@ -11,7 +11,8 @@ from pydantic import BaseModel
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
 from aiogram.types import (
-    Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Update
+    Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Update,
+    WebAppInfo
 )
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -20,6 +21,8 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 import finance_core as fc
+from finance_api import router as finance_router
+from fastapi.responses import FileResponse
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "8946677929:AAHDpPknWmm12DVFXncbp23q1Ysm8p8XTag")
 DB_PATH = "tracker.db"
@@ -136,7 +139,10 @@ def main_kb():
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="📊 Прогресс", callback_data="stats"),
          InlineKeyboardButton(text="📋 Задачи", callback_data="tasks")],
-        [InlineKeyboardButton(text="💰 Финансы", callback_data="finance"),
+        [InlineKeyboardButton(
+            text="💰 Финансы",
+            web_app=WebAppInfo(url="https://torclix-tracker.onrender.com/finance")
+         ),
          InlineKeyboardButton(text="📞 Касания", callback_data="contacts")],
     ])
 
@@ -514,6 +520,7 @@ async def lifespan(app: FastAPI):
     await bot.session.close()
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(finance_router)
 
 @app.post("/webhook")
 async def webhook(update: dict):
@@ -524,9 +531,14 @@ async def webhook(update: dict):
         print("Update error:", e)
     return {"ok": True}
 
-@app.get("/", response_class=HTMLResponse)
 async def root():
-    return "<h1>Torclix Tracker</h1><p>OK</p>"
+    return "<h1>Torclix Tracker</h1><p>OK</p>"async def root():
+@app.get("/finance", response_class=HTMLResponse)
+async def finance_page():
+    return FileResponse("finance.html")
 
-if __name__ == "__main__":
+@app.get("/tasks", response_class=HTMLResponse)
+async def tasks_page():
+    return FileResponse("index.html")@app.get("/", response_class=HTMLResponse)
+async def root():if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=PORT)
