@@ -502,6 +502,7 @@ async def cb_fin_cancel(call: CallbackQuery, state: FSMContext):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    fc.init_db()
     await seed_tasks()
     url = os.getenv("RENDER_EXTERNAL_URL")
     if url:
