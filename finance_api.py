@@ -1,5 +1,4 @@
 
-Finance api · PY
 """finance_api.py: API для Mini App. Подключается одной строкой: app.include_router(router)
  
 Переменные окружения (обязательны):
