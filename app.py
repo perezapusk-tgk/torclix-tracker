@@ -531,14 +531,17 @@ async def webhook(update: dict):
         print("Update error:", e)
     return {"ok": True}
 
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    return "<h1>Torclix Tracker</h1><p>OK</p>"async def root():
+    return "<h1>Torclix Tracker</h1><p>OK</p>"
+
 @app.get("/finance", response_class=HTMLResponse)
 async def finance_page():
     return FileResponse("finance.html")
 
 @app.get("/tasks", response_class=HTMLResponse)
 async def tasks_page():
-    return FileResponse("index.html")@app.get("/", response_class=HTMLResponse)
-async def root():if __name__ == "__main__":
+    return FileResponse("index.html")
+
+if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=PORT)
